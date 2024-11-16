@@ -8,8 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ltd.ligma.vorovayka.config.statemachine.state.OrderStateEnum;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
@@ -44,10 +42,4 @@ public class Order extends BaseEntity {
 
     @Schema(description = "Date after which order cannot be purchased")
     private LocalDateTime reserveExpiresIn;
-
-    @CreatedDate
-    private LocalDateTime dateCreate;
-
-    @LastModifiedDate
-    private LocalDateTime dateUpdate;
 }

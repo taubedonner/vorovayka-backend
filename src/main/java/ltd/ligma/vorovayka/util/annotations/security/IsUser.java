@@ -11,6 +11,6 @@ import java.lang.annotation.Target;
 @DocumentedBearerToken
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@PreAuthorize("isAuthenticated() and hasRole(@commonSecurityConfig.roles.user())")
+@PreAuthorize("isAuthenticated()")
 public @interface IsUser {
 }
