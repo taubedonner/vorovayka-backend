@@ -42,11 +42,19 @@ app:
       allowed-methods: ${CORS_METHODS:'GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD'}
       allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
       max-age: ${CORS_MAX_AGE:60}
-    jwt:
+    auth:
       access-token:
         private-key-file: "secret.pem"
-        expires-in: 1200000
+        expires-in: 600000
         authorities-claim: "roles"
+        cookie:
+          key: "access_token"
+          path: "/"
+      refresh-token:
+        expires-in: 2592000000
+        cookie:
+          key: "refresh_token"
+          path: "/auth"
   paths:
     static-files: static
     log-files: logs

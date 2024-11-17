@@ -9,10 +9,12 @@ import ltd.ligma.vorovayka.exception.TokenFormatException;
 import ltd.ligma.vorovayka.model.User;
 import ltd.ligma.vorovayka.security.JwtProvider;
 import ltd.ligma.vorovayka.security.SecurityContextHolderWrapper;
+import ltd.ligma.vorovayka.util.CookieHelper;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.WebUtils;
 
@@ -22,31 +24,20 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @EnableConfigurationProperties(AccessTokenProps.class)
 public class AccessTokenService {
     private final JwtProvider jwtProvider;
 
-    private final AccessTokenProps accessTokenProps;
+    private final AccessTokenProps props;
 
     private final SecurityContextHolderWrapper securityContextHolder;
 
-    /**
-     * Generates JWT string from logged-in User details
-     *
-     * @param userDetails full user details retrieved by login
-     * @return JWT string
-     */
     public String generateAccessToken(User userDetails) {
         return jwtProvider.generateAccessToken(userDetails);
     }
 
-    /**
-     * Retrieves Access Token from request headers and converts it to user <u>brief</u>
-     *
-     * @param request request with Access Token in Authorization header or HttpOnly Cookie
-     * @return user brief (id, jwt, roles)
-     */
     public UsernamePasswordAuthenticationToken getAccessTokenAuthenticationFromRequest(HttpServletRequest request) {
         String accessTokenHeaderKey = "Authorization";
         String accessTokenPrefix = "Bearer ";
@@ -72,18 +63,11 @@ public class AccessTokenService {
             token = token.replace(accessTokenPrefix, "");
         }
 
-//        if (tokenIsBlacklisted(token)) {
-//            throw new BadTokenException("Specified access token belongs to the logged out user");
-//        }
 
         Claims claims = jwtProvider.parseAccessToken(token);
         UUID userId = UUID.fromString(claims.getSubject());
 
-//        if (userIsBlacklisted(userId)) {
-//            throw new BadTokenException("Specified access token belongs to changed or blocked user");
-//        }
-
-        List<SimpleGrantedAuthority> authorities = Arrays.stream(claims.get(accessTokenProps.authoritiesClaim())
+        List<SimpleGrantedAuthority> authorities = Arrays.stream(claims.get(props.authoritiesClaim())
                 .toString().split(",")).map(SimpleGrantedAuthority::new).collect(Collectors.toList());
 
         return new UsernamePasswordAuthenticationToken(userId, token, authorities);
@@ -98,4 +82,14 @@ public class AccessTokenService {
     public UsernamePasswordAuthenticationToken getAccessTokenPayloadFromContext() {
         return (UsernamePasswordAuthenticationToken) securityContextHolder.getAuthentication();
     }
+
+    public Cookie createTokenCookie(String accessToken) {
+        return CookieHelper.createHttpOnlyCookie(props.cookie().key(), accessToken, props.cookie().path(), props.expiresIn());
+    }
+
+    public Cookie eraseTokenCookie() {
+        return CookieHelper.createHttpOnlyCookie(props.cookie().key(), "", props.cookie().path(), 0L);
+    }
+
+
 }
