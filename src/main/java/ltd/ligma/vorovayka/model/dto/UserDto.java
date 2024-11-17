@@ -18,7 +18,7 @@ public class UserDto extends LoginPayload {
     private UUID id;
 
     @Valid
-    @JsonProperty(value = "roles")
+    @JsonProperty(value = "roles", access = JsonProperty.Access.READ_ONLY)
     private List<String> roles;
 
     @NotBlank
@@ -35,4 +35,3 @@ public class UserDto extends LoginPayload {
     @JsonProperty("lastName")
     private String lastName;
 }
-

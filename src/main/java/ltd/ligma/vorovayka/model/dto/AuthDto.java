@@ -10,6 +10,7 @@ import ltd.ligma.vorovayka.model.payload.LoginPayload;
 
 @Getter
 @Setter
+@Deprecated(forRemoval = true)
 public class AuthDto extends LoginPayload {
     @Schema(description = "Client's unique device / browser fingerprint")
     @NotBlank

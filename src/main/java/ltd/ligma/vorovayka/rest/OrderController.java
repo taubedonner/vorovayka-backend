@@ -4,7 +4,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import ltd.ligma.vorovayka.filter.OrderFilter;
-import ltd.ligma.vorovayka.model.Order;
+import ltd.ligma.vorovayka.mapper.OrderMapper;
+import ltd.ligma.vorovayka.model.dto.OrderDto;
 import ltd.ligma.vorovayka.model.dto.RateProductDto;
 import ltd.ligma.vorovayka.model.dto.ReserveOrderDto;
 import ltd.ligma.vorovayka.service.OrderService;
@@ -27,53 +28,55 @@ import java.util.UUID;
 public class OrderController {
     private final OrderService orderService;
 
+    private final OrderMapper orderMapper;
+
     @IsUser
     @PostMapping("my")
     @DocumentedOperation(desc = "Create new order with pre-purchase state by user access token", errors = HttpStatus.BAD_REQUEST)
-    public Order reserve(@AuthenticationPrincipal Object principal, @Valid @RequestBody ReserveOrderDto dto) {
-        return orderService.reserve(principal, dto);
+    public OrderDto reserve(@AuthenticationPrincipal Object principal, @Valid @RequestBody ReserveOrderDto dto) {
+        return orderMapper.toOrderDto(orderService.reserve(principal, dto));
     }
 
     @IsAdmin
     @GetMapping
     @DocumentedOperation(desc = "Find all created orders", errors = HttpStatus.BAD_REQUEST)
-    public PagedModel<Order> findAll(@ParameterObject OrderFilter filter, @ParameterObject Pageable pageable) {
-        return new PagedModel<>(orderService.findAll(filter, pageable));
+    public PagedModel<OrderDto> findAll(@ParameterObject OrderFilter filter, @ParameterObject Pageable pageable) {
+        return new PagedModel<>(orderMapper.toOrderDtoPage(orderService.findAll(filter, pageable)));
     }
 
     @IsUser
     @GetMapping("my")
     @DocumentedOperation(desc = "Find user's created orders", errors = HttpStatus.BAD_REQUEST)
-    public PagedModel<Order> findMyAll(@AuthenticationPrincipal Object principal, @ParameterObject OrderFilter filter, @ParameterObject Pageable pageable) {
-        return new PagedModel<>(orderService.findAll(principal, filter, pageable));
+    public PagedModel<OrderDto> findMyAll(@AuthenticationPrincipal Object principal, @ParameterObject OrderFilter filter, @ParameterObject Pageable pageable) {
+        return new PagedModel<>(orderMapper.toOrderDtoPage(orderService.findAll(principal, filter, pageable)));
     }
 
     @IsAdmin
     @GetMapping("{id}")
     @DocumentedOperation(desc = "Find any created order by ID", errors = {HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND})
-    public Order findById(@PathVariable UUID id) {
-        return orderService.findById(id);
+    public OrderDto findById(@PathVariable UUID id) {
+        return orderMapper.toOrderDto(orderService.findById(id));
     }
 
     @IsUser
     @GetMapping("my/{id}")
     @DocumentedOperation(desc = "Find user's created order by ID", errors = {HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND})
-    public Order findMyById(@AuthenticationPrincipal Object principal, @PathVariable UUID id) {
-        return orderService.findById(principal, id);
+    public OrderDto findMyById(@AuthenticationPrincipal Object principal, @PathVariable UUID id) {
+        return orderMapper.toOrderDto(orderService.findById(principal, id));
     }
 
     @IsAdmin
     @PutMapping("{id}")
     @DocumentedOperation(desc = "Edit any pre-purchased order", errors = {HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND})
-    public Order editReserved(@PathVariable UUID id, @Valid @RequestBody ReserveOrderDto dto) {
-        return orderService.editReserved(id, dto);
+    public OrderDto editReserved(@PathVariable UUID id, @Valid @RequestBody ReserveOrderDto dto) {
+        return orderMapper.toOrderDto(orderService.editReserved(id, dto));
     }
 
     @IsUser
     @PutMapping("my/{id}")
     @DocumentedOperation(desc = "Edit user's pre-purchased order", errors = {HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND})
-    public Order editMyReserved(@AuthenticationPrincipal Object principal, @PathVariable UUID id, @Valid @RequestBody ReserveOrderDto dto) {
-        return orderService.editReserved(principal, id, dto);
+    public OrderDto editMyReserved(@AuthenticationPrincipal Object principal, @PathVariable UUID id, @Valid @RequestBody ReserveOrderDto dto) {
+        return orderMapper.toOrderDto(orderService.editReserved(principal, id, dto));
     }
 
     @IsUser

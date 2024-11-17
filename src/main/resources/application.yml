@@ -2,24 +2,28 @@ logging:
   level:
     org.springframework.web: debug
   file:
-    path: logs
+    path: "logs"
 spring:
   application:
-    name: vorovayka
+    name: "vorovayka"
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 20MB
   datasource:
-    url: jdbc:postgresql://${DB_ADDRESS}/${DB_DATABASE}
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
+    url: "jdbc:postgresql://${DB_ADDRESS}/${DB_DATABASE}"
+    username: "${DB_USER}"
+    password: "${DB_PASSWORD}"
   jpa:
     hibernate:
       ddl-auto: update
   web:
     resources:
       add-mappings: false
+  sql:
+    init:
+      mode: always
+      platform: "postgresql"
 server:
   error:
     whitelabel:
@@ -27,19 +31,19 @@ server:
   forward-headers-strategy: native
 springdoc:
   swagger-ui:
-    path: /docs/swagger-ui.html
+    path: "/docs/swagger-ui.html"
   api-docs:
-    path: /docs/v3/api-docs
+    path: "/docs/v3/api-docs"
 app:
   logic:
     orders:
       expiration-time: 30
       expiration-time-unit: MINUTES
   docs:
-    version: ${API_VERSION}
+    version: "${API_VERSION}"
   security:
     cors:
-      allowed-headers: '*'
+      allowed-headers: "*"
       allowed-origins: ${CORS_ORIGINS:'*'}
       allowed-methods: ${CORS_METHODS:'GET,POST,PUT,DELETE,PATCH,OPTIONS,HEAD'}
       allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
@@ -58,17 +62,17 @@ app:
           key: "refresh_token"
           path: "/auth"
   paths:
-    static-files: static
-    log-files: logs
+    static-files: "static"
+    log-files: "logs"
   media:
-    base-path: media
+    base-path: "media"
     images:
-      format: png
-      base-path: original
+      format: "png"
+      base-path: "original"
       min-width: 512
       min-height: 512
     thumbnails:
-      format: png
-      base-path: thumbnails
+      format: "png"
+      base-path: "thumbnails"
       width: 150
       height: 150

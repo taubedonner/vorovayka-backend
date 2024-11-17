@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -56,5 +57,14 @@ public class UserService {
     public void deleteUser(UUID id) {
         refreshTokenService.deleteAllByUserId(id);
         userRepository.deleteById(id);
+    }
+
+    public User editRoles(UUID id, Set<Role.Names> roleList) {
+        var user = findById(id);
+        var foundRoles = roleRepository.findByNameIn(roleList);
+        if (foundRoles.size() != roleList.size()) throw new NotFoundException("Some of provided roles were not found in database");
+        user.setRoles(foundRoles);
+        userRepository.save(user);
+        return user;
     }
 }
