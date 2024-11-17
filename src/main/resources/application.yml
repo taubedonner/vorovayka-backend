@@ -17,6 +17,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: true
   web:
     resources:
       add-mappings: false
@@ -24,6 +25,7 @@ spring:
     init:
       mode: always
       platform: "postgresql"
+      #continue-on-error: true
 server:
   error:
     whitelabel:
