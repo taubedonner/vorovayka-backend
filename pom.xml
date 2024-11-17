@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>ltd.ligma</groupId>
 	<artifactId>vorovayka</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>vorovayka</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
@@ -217,6 +217,52 @@
 							-Amapstruct.defaultComponentModel=spring
 						</arg>
 					</compilerArgs>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>io.fabric8</groupId>
+				<artifactId>docker-maven-plugin</artifactId>
+				<version>0.45.0</version>
+				<configuration>
+					<authConfig>
+						<push>
+							<!--suppress UnresolvedMavenProperty -->
+							<username>${env.DOCKER_REGISTRY_USER}</username>
+							<!--suppress UnresolvedMavenProperty -->
+							<password>${env.DOCKER_REGISTRY_PASS}</password>
+						</push>
+					</authConfig>
+					<images>
+						<image>
+							<!--suppress UnresolvedMavenProperty -->
+							<name>${env.DOCKER_REGISTRY_HOST}/vorovayka-backend</name>
+							<build>
+								<from>bellsoft/liberica-openjre-alpine:17</from>
+								<assembly>
+									<descriptorRef>artifact</descriptorRef>
+								</assembly>
+								<workdir>/var/opt/app</workdir>
+								<runCmds>
+									<run>mkdir -p logs</run>
+									<run>mkdir -p static</run>
+								</runCmds>
+								<tags>
+									<tag>latest</tag>
+									<tag>${project.version}</tag>
+								</tags>
+								<env>
+									<API_VERSION>${project.version}</API_VERSION>
+								</env>
+								<entryPoint>
+									<exec>
+										<arg>java</arg>
+										<arg>-jar</arg>
+										<arg>/maven/${project.build.finalName}.jar</arg>
+									</exec>
+								</entryPoint>
+							</build>
+						</image>
+					</images>
 				</configuration>
 			</plugin>
 		</plugins>
