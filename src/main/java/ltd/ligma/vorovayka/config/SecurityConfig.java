@@ -8,6 +8,7 @@ import ltd.ligma.vorovayka.security.JwtExceptionFilter;
 import ltd.ligma.vorovayka.service.impl.UserDetailsServiceImpl;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -25,6 +26,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Profile("!dev")
+@Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 @EnableConfigurationProperties(CorsConfigProps.class)

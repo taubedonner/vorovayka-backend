@@ -6,6 +6,7 @@ import ltd.ligma.vorovayka.model.payload.ClientMeta;
 import nl.basjes.parse.useragent.UserAgentAnalyzer;
 import org.bouncycastle.util.encoders.Hex;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -19,18 +20,20 @@ import java.util.stream.Collectors;
 public class ClientMetaProvider {
     private final UserAgentAnalyzer userAgentAnalyzer;
 
+    private static final String HTTP_HEADER_PROXY_REAL_IP = "X-Real-IP";
+
     public ClientMeta retrieveClientMeta(HttpServletRequest request) {
         var meta = new ClientMeta();
 
         var tz = RequestContextUtils.getTimeZone(request);
         if (tz != null) meta.setTimeZone(tz.getID());
 
-        meta.setIp(request.getRemoteAddr());
+        meta.setIp(retrieveRemoteAddress(request));
 
         var ua = userAgentAnalyzer.parse(Collections.list(request.getHeaderNames()).stream().collect(Collectors.toMap(h -> h, request::getHeader)));
-        meta.setClientName(String.join(",",ua.getValue("AgentClass"), ua.getValue("AgentName")));
-        meta.setSystem(String.join(",",ua.getValue("OperatingSystemClass"), ua.getValue("OperatingSystemName")));
-        meta.setCpu(String.join(",",ua.getValue("DeviceCpu"), ua.getValue("DeviceCpuBits")));
+        meta.setClientName(String.join(",", ua.getValue("AgentClass"), ua.getValue("AgentName")));
+        meta.setSystem(String.join(",", ua.getValue("OperatingSystemClass"), ua.getValue("OperatingSystemName")));
+        meta.setCpu(String.join(",", ua.getValue("DeviceCpu"), ua.getValue("DeviceCpuBits")));
 
         return meta;
     }
@@ -49,5 +52,12 @@ public class ClientMetaProvider {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // TODO: Handle exception
         }
+    }
+
+    private static String retrieveRemoteAddress(HttpServletRequest request) {
+        String realIp = request.getHeader(HTTP_HEADER_PROXY_REAL_IP);
+        if (StringUtils.hasText(realIp)) return realIp;
+        return request.getRemoteAddr();
+
     }
 }
