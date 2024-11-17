@@ -16,7 +16,11 @@ public class ApiExceptionResponseBody {
     private final LocalDateTime timestamp = LocalDateTime.now();
     private final List<String> details;
 
-    public static String serialize(List<String> details) throws JsonProcessingException {
-        return new ObjectMapper().writeValueAsString(new ApiExceptionResponseBody(details));
+    public static String serialize(List<String> details, ObjectMapper mapper) throws JsonProcessingException {
+        return mapper.writeValueAsString(new ApiExceptionResponseBody(details));
+    }
+
+    public static String serialize(ApiException ex, ObjectMapper mapper) throws JsonProcessingException {
+        return mapper.writeValueAsString(ex.getResponseBody());
     }
 }

@@ -1,5 +1,6 @@
 package ltd.ligma.vorovayka.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import ltd.ligma.vorovayka.exception.ApiExceptionResponseBody;
@@ -17,8 +18,11 @@ import java.util.List;
 public class AuthenticationEntryPointImpl implements AuthenticationEntryPoint {
     private final HandlerExceptionResolver exceptionResolver;
 
-    public AuthenticationEntryPointImpl(@Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
+    private final ObjectMapper objectMapper;
+
+    public AuthenticationEntryPointImpl(@Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver, ObjectMapper objectMapper) {
         this.exceptionResolver = exceptionResolver;
+        this.objectMapper = objectMapper;
     }
 
     /** Just returns HTTP 401 on every AuthenticationException */
@@ -34,7 +38,7 @@ public class AuthenticationEntryPointImpl implements AuthenticationEntryPoint {
         if (!response.isCommitted()) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.getWriter().write(ApiExceptionResponseBody.serialize(List.of(authException.getMessage())));
+            response.getWriter().write(ApiExceptionResponseBody.serialize(List.of(authException.getMessage()), objectMapper));
         }
     }
 }

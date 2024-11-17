@@ -36,16 +36,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
         try {
             var handlerMapping = requestMappingHandlerMapping.getHandler(request);
-            if (handlerMapping == null) throw new RuntimeException("Here's a bug"); // FIXME: Handle this shit properly 1
+            if (handlerMapping == null) throw new RuntimeException("Here's a bug"); // FIXME: Handle this shit properly
             var handler = (HandlerMethod) handlerMapping.getHandler();
             var method = handler.getMethod();
-            return !method.isAnnotationPresent(IsUser.class) || !method.isAnnotationPresent(IsAdmin.class);
+            var skip = !method.isAnnotationPresent(IsUser.class) && !method.isAnnotationPresent(IsAdmin.class);
+            log.debug("Captured request: IsUser={}, IsAdmin{}, Skip={}", method.isAnnotationPresent(IsUser.class), method.isAnnotationPresent(IsAdmin.class), skip);
+            return skip;
         } catch (Exception e) {
             return true;
         }
     }
-
 }

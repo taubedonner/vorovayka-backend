@@ -13,6 +13,7 @@ public abstract class ApiException extends RuntimeException {
     }
 
     public ApiException(List<String> messages) {
+        super(messages.toString());
         body = new ApiExceptionResponseBody(messages);
     }
 
