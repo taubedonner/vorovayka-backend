@@ -1,32 +1,22 @@
 package ltd.ligma.vorovayka.config.props;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@Getter
-@Setter
-@ConfigurationProperties(prefix = "app.media")
-public class MediaConfigProps {
-    String basePath;
-    Images images;
-    Thumbnails thumbnails;
+import java.util.List;
 
-    @Getter
-    @Setter
-    public static class Images {
-        String format;
-        String basePath;
-        Integer minWidth;
-        Integer minHeight;
+@ConfigurationProperties(prefix = "app.media")
+public record MediaConfigProps(String basePath, Images images, Thumbnails thumbnails) {
+    public record Images(String format, String basePath, Integer minWidth, Integer minHeight) {
     }
 
-    @Getter
-    @Setter
-    public static class Thumbnails {
-        String format;
-        String basePath;
-        Integer width;
-        Integer height;
+    public record Thumbnails(String format, String basePath, List<ThumbnailDimensions> dimensions) {
+    }
+
+    public record ThumbnailDimensions(String tag, Integer w, Integer h, ThumbnailScaleMode mode) {
+    }
+
+    public enum ThumbnailScaleMode {
+        FILL,
+        FIT
     }
 }

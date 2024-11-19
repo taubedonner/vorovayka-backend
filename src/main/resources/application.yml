@@ -18,6 +18,7 @@ spring:
     hibernate:
       ddl-auto: update
     defer-datasource-initialization: true
+    show-sql: true
   web:
     resources:
       add-mappings: false
@@ -40,7 +41,7 @@ app:
   logic:
     orders:
       expiration-time: 30
-      expiration-time-unit: MINUTES
+      expiration-time-unit: minutes
   docs:
     version: "${API_VERSION}"
   security:
@@ -55,6 +56,7 @@ app:
         private-key-file: "secret.pem"
         expires-in: 600000
         authorities-claim: "roles"
+        session-id-claim: "session"
         cookie:
           key: "access_token"
           path: "/"
@@ -76,5 +78,9 @@ app:
     thumbnails:
       format: "png"
       base-path: "thumbnails"
-      width: 150
-      height: 150
+      dimensions:
+        - {tag: "64q", w: 64, h: 64, mode: fit}
+        - {tag: "96q", w: 96, h: 96, mode: fit}
+        - {tag: "128q", w: 128, h: 128, mode: fit}
+        - {tag: "144q", w: 144, h: 144, mode: fit}
+        - {tag: "preview", w: 236, h: 354, mode: fill}

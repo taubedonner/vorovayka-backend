@@ -67,7 +67,7 @@ public class ProductService {
     public void deleteImage(UUID id) {
         String prefix = generatePrefix(id);
         imageService.deleteOriginalImage(prefix);
-        imageService.deleteThumbnailImage(prefix);
+        imageService.deleteThumbnailImages(prefix);
     }
 
     private void mutate(Product product, SaveProductDto productDto) {
@@ -118,9 +118,9 @@ public class ProductService {
         }
     }
 
-    public byte[] readThumbnailImage(UUID id) {
+    public byte[] readThumbnailImage(UUID id, String tag) {
         try {
-            return imageService.readThumbnailImage(generatePrefix(id)).readAllBytes();
+            return imageService.readThumbnailImage(generatePrefix(id), tag).readAllBytes();
         } catch (ApiException e) {
             throw e;
         } catch (Exception e) {

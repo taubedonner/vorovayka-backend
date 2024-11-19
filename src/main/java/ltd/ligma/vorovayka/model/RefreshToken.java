@@ -14,8 +14,11 @@ import java.util.UUID;
 public class RefreshToken extends BaseAuditable {
     @Id
     @GeneratedValue
-    @Column(name = "token", columnDefinition = "uuid", updatable = false)
-    private UUID token;
+    @Column(name = "id", columnDefinition = "uuid", updatable = false)
+    private UUID id;
+
+    @Column(name = "token", updatable = false)
+    private String token;
 
     @Column(name = "expires_in", updatable = false, nullable = false)
     private LocalDateTime expiresIn;

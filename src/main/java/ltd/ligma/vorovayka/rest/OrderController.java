@@ -8,6 +8,7 @@ import ltd.ligma.vorovayka.mapper.OrderMapper;
 import ltd.ligma.vorovayka.model.dto.OrderDto;
 import ltd.ligma.vorovayka.model.dto.RateProductDto;
 import ltd.ligma.vorovayka.model.dto.ReserveOrderDto;
+import ltd.ligma.vorovayka.security.TokenPrincipal;
 import ltd.ligma.vorovayka.service.OrderService;
 import ltd.ligma.vorovayka.util.annotations.security.IsAdmin;
 import ltd.ligma.vorovayka.util.annotations.security.IsUser;
@@ -33,7 +34,7 @@ public class OrderController {
     @IsUser
     @PostMapping("my")
     @DocumentedOperation(desc = "Create new order with pre-purchase state by user access token", errors = HttpStatus.BAD_REQUEST)
-    public OrderDto reserve(@AuthenticationPrincipal Object principal, @Valid @RequestBody ReserveOrderDto dto) {
+    public OrderDto reserve(@AuthenticationPrincipal TokenPrincipal principal, @Valid @RequestBody ReserveOrderDto dto) {
         return orderMapper.toOrderDto(orderService.reserve(principal, dto));
     }
 
@@ -47,7 +48,7 @@ public class OrderController {
     @IsUser
     @GetMapping("my")
     @DocumentedOperation(desc = "Find user's created orders", errors = HttpStatus.BAD_REQUEST)
-    public PagedModel<OrderDto> findMyAll(@AuthenticationPrincipal Object principal, @ParameterObject OrderFilter filter, @ParameterObject Pageable pageable) {
+    public PagedModel<OrderDto> findMyAll(@AuthenticationPrincipal TokenPrincipal principal, @ParameterObject OrderFilter filter, @ParameterObject Pageable pageable) {
         return new PagedModel<>(orderMapper.toOrderDtoPage(orderService.findAll(principal, filter, pageable)));
     }
 
@@ -61,7 +62,7 @@ public class OrderController {
     @IsUser
     @GetMapping("my/{id}")
     @DocumentedOperation(desc = "Find user's created order by ID", errors = {HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND})
-    public OrderDto findMyById(@AuthenticationPrincipal Object principal, @PathVariable UUID id) {
+    public OrderDto findMyById(@AuthenticationPrincipal TokenPrincipal principal, @PathVariable UUID id) {
         return orderMapper.toOrderDto(orderService.findById(principal, id));
     }
 
@@ -75,7 +76,7 @@ public class OrderController {
     @IsUser
     @PutMapping("my/{id}")
     @DocumentedOperation(desc = "Edit user's pre-purchased order", errors = {HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND})
-    public OrderDto editMyReserved(@AuthenticationPrincipal Object principal, @PathVariable UUID id, @Valid @RequestBody ReserveOrderDto dto) {
+    public OrderDto editMyReserved(@AuthenticationPrincipal TokenPrincipal principal, @PathVariable UUID id, @Valid @RequestBody ReserveOrderDto dto) {
         return orderMapper.toOrderDto(orderService.editReserved(principal, id, dto));
     }
 
@@ -83,7 +84,7 @@ public class OrderController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PatchMapping("my/{oid}/products/{pid}/rate")
     @DocumentedOperation(desc = "Set rating of product from completed order", errors = {HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND})
-    public void rate(@AuthenticationPrincipal Object principal, @PathVariable UUID oid, @PathVariable UUID pid, @Valid @RequestBody RateProductDto dto) {
+    public void rate(@AuthenticationPrincipal TokenPrincipal principal, @PathVariable UUID oid, @PathVariable UUID pid, @Valid @RequestBody RateProductDto dto) {
         orderService.rate(principal, oid, pid, dto);
     }
 
@@ -91,7 +92,7 @@ public class OrderController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PatchMapping("my/{id}/cancel-reserve")
     @DocumentedOperation(desc = "Cancel reserving user's reserved order", errors = {HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND})
-    public void cancelReserveMy(@AuthenticationPrincipal Object principal, @PathVariable UUID id) {
+    public void cancelReserveMy(@AuthenticationPrincipal TokenPrincipal principal, @PathVariable UUID id) {
         orderService.cancelReserve(principal, id);
     }
 
@@ -99,7 +100,7 @@ public class OrderController {
     @PatchMapping("my/{id}/purchase")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DocumentedOperation(desc = "Set purchase state for user's reserved order", errors = {HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND})
-    public void purchaseMy(@AuthenticationPrincipal Object principal, @PathVariable UUID id) {
+    public void purchaseMy(@AuthenticationPrincipal TokenPrincipal principal, @PathVariable UUID id) {
         orderService.purchase(principal, id);
     }
 
@@ -115,7 +116,7 @@ public class OrderController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PatchMapping("my/{id}/cancel-purchase") // TODO: Reject user's refund in IN_TRANSIT state
     @DocumentedOperation(desc = "Cancel purchase for user's purchased order", errors = {HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND})
-    public void cancelPurchase(@AuthenticationPrincipal Object principal, @PathVariable UUID id) {
+    public void cancelPurchase(@AuthenticationPrincipal TokenPrincipal principal, @PathVariable UUID id) {
         orderService.cancelPurchase(principal, id);
     }
 

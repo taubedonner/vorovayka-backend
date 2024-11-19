@@ -9,6 +9,7 @@ import ltd.ligma.vorovayka.exception.TokenFormatException;
 import ltd.ligma.vorovayka.model.User;
 import ltd.ligma.vorovayka.security.JwtProvider;
 import ltd.ligma.vorovayka.security.SecurityContextHolderWrapper;
+import ltd.ligma.vorovayka.security.TokenPrincipal;
 import ltd.ligma.vorovayka.util.CookieHelper;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,8 +35,8 @@ public class AccessTokenService {
 
     private final SecurityContextHolderWrapper securityContextHolder;
 
-    public String generateAccessToken(User userDetails) {
-        return jwtProvider.generateAccessToken(userDetails);
+    public String generateAccessToken(User userDetails, UUID sessionId) {
+        return jwtProvider.generateAccessToken(userDetails, sessionId);
     }
 
     public UsernamePasswordAuthenticationToken getAccessTokenAuthenticationFromRequest(HttpServletRequest request) {
@@ -66,11 +67,12 @@ public class AccessTokenService {
 
         Claims claims = jwtProvider.parseAccessToken(token);
         UUID userId = UUID.fromString(claims.getSubject());
+        UUID sessionId = UUID.fromString(claims.get(props.sessionIdClaim()).toString());
 
         List<SimpleGrantedAuthority> authorities = Arrays.stream(claims.get(props.authoritiesClaim())
                 .toString().split(",")).map(SimpleGrantedAuthority::new).collect(Collectors.toList());
 
-        return new UsernamePasswordAuthenticationToken(userId, token, authorities);
+        return new UsernamePasswordAuthenticationToken(new TokenPrincipal(userId, sessionId), token, authorities);
     }
 
     /**
@@ -90,6 +92,4 @@ public class AccessTokenService {
     public Cookie eraseTokenCookie() {
         return CookieHelper.createHttpOnlyCookie(props.cookie().key(), "", props.cookie().path(), 0L);
     }
-
-
 }

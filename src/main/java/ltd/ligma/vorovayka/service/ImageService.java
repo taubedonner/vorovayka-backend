@@ -1,10 +1,10 @@
 package ltd.ligma.vorovayka.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import ltd.ligma.vorovayka.config.props.MediaConfigProps;
 import ltd.ligma.vorovayka.config.props.PathsConfigProps;
 import ltd.ligma.vorovayka.exception.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.imgscalr.Scalr;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -46,48 +47,65 @@ public class ImageService {
             throw new UnprocessableEntityException("Could not read provided file");
         }
 
-        Integer minWidth = mediaProps.getImages().getMinWidth();
-        Integer minHeight = mediaProps.getImages().getMinHeight();
+        saveOriginalImage(originalImage, prefix);
+        saveThumbnailImages(originalImage, prefix);
+    }
+
+    public ByteArrayInputStream readOriginalImage(String prefix) {
+        return readImage(getDir(mediaProps.images().basePath()), prefix);
+    }
+
+    public ByteArrayInputStream readThumbnailImage(String prefix, String tag) { // TODO: asdfasf
+        return readImage(getDir(mediaProps.thumbnails().basePath()), taggedPrefix(prefix, tag));
+    }
+
+    public void deleteOriginalImage(String prefix) {
+        try {
+            Files.deleteIfExists(getFinalDir(mediaProps.images().basePath(), prefix));
+        } catch (Exception e) {
+            log.error(String.format("Could not delete image with prefix '%s'", prefix), e);
+        }
+    }
+
+    public void deleteThumbnailImages(String prefix) {
+        try {
+            var files = getDir(mediaProps.thumbnails().basePath()).toFile().listFiles(((dir, name) -> name.startsWith(prefix)));
+            if (files == null || files.length == 0) return;
+            Arrays.stream(files).forEach(File::delete);
+        } catch (Exception e) {
+            log.error(String.format("Could not delete thumbnails with prefix '%s'", prefix), e);
+        }
+    }
+
+    private void saveOriginalImage(BufferedImage originalImage, String prefix) {
+        Integer minWidth = mediaProps.images().minWidth();
+        Integer minHeight = mediaProps.images().minHeight();
+
         if (originalImage.getWidth() < minWidth || originalImage.getHeight() < minHeight) {
             throw new BadRequestException(String.format("Min image dimensions are %dx%d", minWidth, minHeight));
         }
 
         try {
-            Integer thumbWidth = mediaProps.getThumbnails().getWidth();
-            Integer thumbHeight = mediaProps.getThumbnails().getHeight();
-            BufferedImage thumbnailImage = Scalr.resize(originalImage, thumbWidth, thumbHeight);
-            ImageIO.write(originalImage, mediaProps.getImages().getFormat(), recreateFile(mediaProps.getImages().getBasePath(), prefix));
-            ImageIO.write(thumbnailImage, mediaProps.getImages().getFormat(), recreateFile(mediaProps.getThumbnails().getBasePath(), prefix));
-        } catch (ApiException e) {
-            throw e;
+            ImageIO.write(originalImage, mediaProps.images().format(), recreateFile(mediaProps.images().basePath(), prefix));
         } catch (Exception e) {
             e.printStackTrace();
             throw new InternalServerException("Failed to save image");
         }
     }
 
-    public ByteArrayInputStream readOriginalImage(String prefix) {
-        return readImage(getDir(mediaProps.getImages().getBasePath()), prefix);
-    }
-
-    public ByteArrayInputStream readThumbnailImage(String prefix) {
-        return readImage(getDir(mediaProps.getThumbnails().getBasePath()), prefix);
-    }
-
-    public void deleteOriginalImage(String prefix) {
-        try {
-            Files.deleteIfExists(getFinalDir(mediaProps.getImages().getBasePath(), prefix));
-        } catch (Exception e) {
-            log.error(String.format("Could not delete image with prefix '%s'", prefix), e);
-        }
-    }
-
-    public void deleteThumbnailImage(String prefix) {
-        try {
-            Files.deleteIfExists(getFinalDir(mediaProps.getThumbnails().getBasePath(), prefix));
-        } catch (Exception e) {
-            log.error(String.format("Could not delete thumbnail with prefix '%s'", prefix), e);
-        }
+    private void saveThumbnailImages(BufferedImage originalImage, String prefix) {
+        mediaProps.thumbnails().dimensions().forEach(thumb -> {
+            var thumbnailImage = switch (thumb.mode()) {
+                case FIT -> Scalr.resize(originalImage, thumb.w(), thumb.h());
+                case FILL -> resizeAndCrop(originalImage, thumb.w(), thumb.h());
+            };
+            try {
+                ImageIO.write(thumbnailImage, mediaProps.images().format(), recreateFile(mediaProps.thumbnails().basePath(), taggedPrefix(prefix, thumb.tag())));
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new InternalServerException("Failed to save thumbnail");
+            }
+        });
     }
 
     private File recreateFile(String imageTypeDir, String prefix) {
@@ -113,10 +131,35 @@ public class ImageService {
     }
 
     private Path getDir(String imageTypeDir) {
-        return Path.of(pathsProps.staticFiles(), mediaProps.getBasePath(), imageTypeDir);
+        return Path.of(pathsProps.staticFiles(), mediaProps.basePath(), imageTypeDir);
     }
 
     private Path getFinalDir(String imageTypeDir, String prefix) {
         return getDir(imageTypeDir).resolve(prefix);
+    }
+
+    private static BufferedImage resizeAndCrop(BufferedImage sourceImage, int targetWidth, int targetHeight) {
+        double targetAspect = (double) targetWidth / targetHeight;
+        int sourceWidth = sourceImage.getWidth();
+        int sourceHeight = sourceImage.getHeight();
+        double sourceAspect = (double) sourceWidth / sourceHeight;
+
+        BufferedImage croppedImage;
+
+        if (sourceAspect > targetAspect) {
+            int newWidth = (int) (sourceHeight * targetAspect);
+            int xOffset = (sourceWidth - newWidth) / 2;
+            croppedImage = Scalr.crop(sourceImage, xOffset, 0, newWidth, sourceHeight);
+        } else {
+            int newHeight = (int) (sourceWidth / targetAspect);
+            int yOffset = (sourceHeight - newHeight) / 2;
+            croppedImage = Scalr.crop(sourceImage, 0, yOffset, sourceWidth, newHeight);
+        }
+
+        return Scalr.resize(croppedImage, Scalr.Method.QUALITY, targetWidth, targetHeight);
+    }
+
+    private static String taggedPrefix(String prefix, String tag) {
+        return String.format("%s_%s", prefix, tag);
     }
 }

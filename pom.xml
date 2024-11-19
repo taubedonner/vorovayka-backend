@@ -38,6 +38,7 @@
 		<springdoc.version>2.6.0</springdoc.version>
 		<lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
 		<yauaa.version>7.28.1</yauaa.version>
+		<sulky.ulid.version>8.3.0</sulky.ulid.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -149,6 +150,11 @@
 			<artifactId>yauaa</artifactId>
 			<version>${yauaa.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>de.huxhorn.sulky</groupId>
+			<artifactId>de.huxhorn.sulky.ulid</artifactId>
+			<version>${sulky.ulid.version}</version>
+		</dependency>
 	</dependencies>
 
 	<dependencyManagement>
@@ -251,7 +257,8 @@
 									<tag>${project.version}</tag>
 								</tags>
 								<env>
-									<API_VERSION>${project.version}</API_VERSION>
+									<!--suppress UnresolvedMavenProperty -->
+									<API_VERSION>${env.API_VERSION}</API_VERSION>
 								</env>
 								<entryPoint>
 									<exec>

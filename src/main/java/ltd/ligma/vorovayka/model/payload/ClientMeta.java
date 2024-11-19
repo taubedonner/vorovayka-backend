@@ -13,6 +13,6 @@ public class ClientMeta {
     private String ip;
     private String cpu;
     private String system;
+    private String client;
     private String timeZone;
-    private String clientName;
 }

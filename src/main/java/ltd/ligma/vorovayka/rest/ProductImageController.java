@@ -28,16 +28,16 @@ public class ProductImageController {
         productService.saveImage(id, image);
     }
 
-    @DocumentedOperation(desc = "Get product image by ID", errors = HttpStatus.NOT_FOUND)
-    @GetMapping(value = "png/original", produces = MediaType.IMAGE_PNG_VALUE)
+    @DocumentedOperation(desc = "Get product original image", errors = HttpStatus.NOT_FOUND)
+    @GetMapping(value = "png", produces = MediaType.IMAGE_PNG_VALUE)
     public @ResponseBody byte[] getProductImage(@PathVariable UUID id) {
         return productService.readOriginalImage(id);
     }
 
-    @DocumentedOperation(desc = "Get product thumbnail image by ID", errors = HttpStatus.NOT_FOUND)
-    @GetMapping(value = "png/thumbnail", produces = MediaType.IMAGE_PNG_VALUE)
-    public @ResponseBody byte[] getProductThumbnail(@PathVariable UUID id) {
-        return productService.readThumbnailImage(id);
+    @DocumentedOperation(desc = "Get product scaled image", errors = HttpStatus.NOT_FOUND)
+    @GetMapping(value = "png/thumbnail/{tag}", produces = MediaType.IMAGE_PNG_VALUE)
+    public @ResponseBody byte[] getProductThumbnail(@PathVariable UUID id, @PathVariable String tag) {
+        return productService.readThumbnailImage(id, tag);
     }
 
     @IsAdmin

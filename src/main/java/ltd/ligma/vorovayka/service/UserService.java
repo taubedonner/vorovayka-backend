@@ -55,7 +55,7 @@ public class UserService {
     }
 
     public void deleteUser(UUID id) {
-        refreshTokenService.deleteAllByUserId(id);
+        refreshTokenService.deleteByUserId(id);
         userRepository.deleteById(id);
     }
 

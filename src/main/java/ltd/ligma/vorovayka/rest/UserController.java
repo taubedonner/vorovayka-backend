@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import ltd.ligma.vorovayka.mapper.UserMapper;
 import ltd.ligma.vorovayka.model.Role;
 import ltd.ligma.vorovayka.model.dto.UserDto;
+import ltd.ligma.vorovayka.security.TokenPrincipal;
 import ltd.ligma.vorovayka.service.UserService;
 import ltd.ligma.vorovayka.util.annotations.security.IsAdmin;
 import ltd.ligma.vorovayka.util.annotations.security.IsUser;
@@ -43,8 +44,8 @@ public class UserController {
     @IsUser
     @Operation(summary = "Get user info by Access Token")
     @GetMapping("me")
-    public UserDto findByToken(@AuthenticationPrincipal UUID id) {
-        return userMapper.toUserDto(userService.findById(id));
+    public UserDto findByToken(@AuthenticationPrincipal TokenPrincipal principal) {
+        return userMapper.toUserDto(userService.findById(principal.userId()));
     }
 
     @IsAdmin
@@ -61,7 +62,7 @@ public class UserController {
     }
 
     @IsAdmin
-    @PatchMapping("{id}")
+    @PatchMapping("{id}/roles")
     public UserDto editRoles(@PathVariable UUID id, @RequestBody Set<Role.Names> roleList) {
         return userMapper.toUserDto(userService.editRoles(id, roleList));
     }

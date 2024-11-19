@@ -2,14 +2,16 @@ package ltd.ligma.vorovayka.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import ltd.ligma.vorovayka.exception.RefreshTokenMisuseException;
 import ltd.ligma.vorovayka.exception.TokenFormatException;
 import ltd.ligma.vorovayka.exception.UserAuthException;
 import ltd.ligma.vorovayka.model.RefreshToken;
 import ltd.ligma.vorovayka.model.User;
-import ltd.ligma.vorovayka.model.payload.*;
-import ltd.ligma.vorovayka.security.ClientMetaProvider;
+import ltd.ligma.vorovayka.model.payload.ClientMeta;
+import ltd.ligma.vorovayka.model.payload.LoginPayload;
+import ltd.ligma.vorovayka.model.payload.RefreshPayload;
+import ltd.ligma.vorovayka.model.payload.TokenPairPayload;
 import ltd.ligma.vorovayka.security.SecurityContextHolderWrapper;
+import ltd.ligma.vorovayka.security.TokenPrincipal;
 import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,7 +20,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -36,7 +40,6 @@ public class AuthService {
 
     private final SecurityContextHolderWrapper securityContextHolder;
 
-    private final ClientMetaProvider clientMetaProvider;
 
     public User register(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -61,34 +64,25 @@ public class AuthService {
         }
 
         RefreshToken refreshToken = refreshTokenService.validateAndRefresh(refreshTokenFromReq, clientMeta);
-        String accessToken = accessTokenService.generateAccessToken(refreshToken.getUser());
-        return new TokenPairPayload(accessToken, refreshToken.getToken().toString());
+        String accessToken = accessTokenService.generateAccessToken(refreshToken.getUser(), refreshToken.getId());
+        return new TokenPairPayload(accessToken, refreshToken.getToken());
     }
 
-    public void logout(LogoutPayload logoutPayload, @Nullable String refreshCookie) {
-        String refreshToken = refreshCookie;
+    public void logout(TokenPrincipal principal) {
+        terminateSession(principal, principal.sessionId());
+    }
 
-        if (!StringUtils.hasText(refreshToken)) {
-            if(logoutPayload != null) {
-                if (StringUtils.hasText(logoutPayload.getRefreshToken())) {
-                    refreshToken = logoutPayload.getRefreshToken();
-                } else {
-                    throw new RefreshTokenMisuseException("Warning! Refresh token was not provided");
-                }
-            }
-        }
+    public void terminateSession(TokenPrincipal principal, UUID sessionId) {
+        refreshTokenService.terminateUserSession(principal.userId(), sessionId);
+    }
 
-        try {
-            refreshTokenService.deleteByToken(refreshToken);
-        } catch (IllegalArgumentException e) {
-            throw new TokenFormatException("Provided refresh token is not valid");
-        }
+    public List<RefreshToken> getSessions(TokenPrincipal principal) {
+        return refreshTokenService.findTokensByUserId(principal.userId()) ;
     }
 
     public Optional<Authentication> authenticate(LoginPayload loginPayload) {
         try {
-            return Optional.ofNullable(authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginPayload.getEmail(), loginPayload.getPassword())));
+            return Optional.ofNullable(authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginPayload.getEmail(), loginPayload.getPassword())));
         } catch (Exception e) {
             return Optional.empty();
         }
@@ -97,8 +91,9 @@ public class AuthService {
     public Optional<TokenPairPayload> generateTokenPair(Authentication authentication, ClientMeta clientMeta) {
         var payload = new TokenPairPayload();
         var user = (User) authentication.getPrincipal();
-        payload.setAccessToken(accessTokenService.generateAccessToken(user));
-        payload.setRefreshToken(refreshTokenService.create(user, clientMeta).getToken().toString());
+        var refreshToken = refreshTokenService.create(user, clientMeta);
+        payload.setAccessToken(accessTokenService.generateAccessToken(user, refreshToken.getId()));
+        payload.setRefreshToken(refreshToken.getToken());
         return Optional.of(payload);
     }
 }

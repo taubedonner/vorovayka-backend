@@ -31,7 +31,7 @@ public class ClientMetaProvider {
         meta.setIp(retrieveRemoteAddress(request));
 
         var ua = userAgentAnalyzer.parse(Collections.list(request.getHeaderNames()).stream().collect(Collectors.toMap(h -> h, request::getHeader)));
-        meta.setClientName(String.join(",", ua.getValue("AgentClass"), ua.getValue("AgentName")));
+        meta.setClient(String.join(",", ua.getValue("AgentClass"), ua.getValue("AgentName")));
         meta.setSystem(String.join(",", ua.getValue("OperatingSystemClass"), ua.getValue("OperatingSystemName")));
         meta.setCpu(String.join(",", ua.getValue("DeviceCpu"), ua.getValue("DeviceCpuBits")));
 
@@ -44,7 +44,7 @@ public class ClientMetaProvider {
                 clientMeta.getCpu(),
                 clientMeta.getSystem(),
                 clientMeta.getTimeZone(),
-                clientMeta.getClientName());
+                clientMeta.getClient());
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(ua.getBytes(StandardCharsets.UTF_8));

@@ -22,6 +22,7 @@ import javax.crypto.SecretKey;
 import java.io.InputStreamReader;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
 public class JwtProvider {
     private final AccessTokenProps accessTokenProps;
 
-    public String generateAccessToken(User user) {
+    public String generateAccessToken(User user, UUID sessionId) {
         try {
             return Jwts.builder()
                     .subject(user.getId().toString())
@@ -39,6 +40,7 @@ public class JwtProvider {
                     .expiration(Date.from(Instant.now().plusMillis(accessTokenProps.expiresIn())))
                     .claim(accessTokenProps.authoritiesClaim(), user.getAuthorities().stream()
                             .map(GrantedAuthority::getAuthority).collect(Collectors.joining(",")))
+                    .claim(accessTokenProps.sessionIdClaim(), sessionId.toString())
                     .signWith(getAccessTokenSecret())
                     .compact();
         } catch (Exception e) {

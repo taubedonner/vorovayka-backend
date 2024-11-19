@@ -25,4 +25,5 @@ jobs:
         DOCKER_REGISTRY_USER: ${{ secrets.REGISTRY_LOGIN }}
         DOCKER_REGISTRY_PASS: ${{ secrets.REGISTRY_PASS }}
         DOCKER_REGISTRY_HOST: ${{ vars.REGISTRY_HOST }}
+        API_VERSION: $(git rev-parse --short "$GITHUB_SHA")
       run: mvn docker:build docker:push --file pom.xml

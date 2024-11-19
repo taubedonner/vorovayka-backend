@@ -8,17 +8,17 @@ import ltd.ligma.vorovayka.config.statemachine.state.OrderStateEnum;
 import ltd.ligma.vorovayka.exception.BadRequestException;
 import ltd.ligma.vorovayka.exception.NotFoundException;
 import ltd.ligma.vorovayka.filter.OrderFilter;
-import ltd.ligma.vorovayka.model.Order;
-import ltd.ligma.vorovayka.model.OrderProduct;
-import ltd.ligma.vorovayka.model.Product;
+import ltd.ligma.vorovayka.model.*;
 import ltd.ligma.vorovayka.model.dto.RateProductDto;
 import ltd.ligma.vorovayka.model.dto.ReserveOrderDto;
 import ltd.ligma.vorovayka.model.dto.SaveOrderProductDto;
 import ltd.ligma.vorovayka.model.payload.OrderStateProjection;
 import ltd.ligma.vorovayka.repository.OrderRepository;
+import ltd.ligma.vorovayka.security.TokenPrincipal;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -46,16 +46,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @EnableConfigurationProperties(OrderLogicConfig.class)
 public class OrderService {
+    private final UserService userService;
     private final OrderLogicConfig orderLogicConfig;
     private final OrderRepository orderRepository;
     private final ProductService productService;
     private final OrderProductService orderProductService;
     private final StateMachineFactory<OrderStateEnum, OrderEventEnum> stateMachineFactory;
 
-    public Order reserve(Object principal, ReserveOrderDto dto) {
-        UUID uid = getTokenUserId(principal);
+    public Order reserve(TokenPrincipal principal, ReserveOrderDto dto) {
+        User user = userService.findById(principal.userId());
         Order order = new Order();
-        //order.setUserId(uid); TODO: Add User Details
+        order.setUser(user);
         mutateOrderDetails(order, dto);
         order.setReserveExpiresIn(LocalDateTime.now()
                 .plus(orderLogicConfig.expirationTime(), orderLogicConfig.expirationTimeUnit()));
@@ -68,10 +69,9 @@ public class OrderService {
         return orderRepository.findAll(filter, pageable);
     }
 
-    public Page<Order> findAll(Object principal, OrderFilter filter, Pageable pageable) {
-        UUID uid = getTokenUserId(principal);
-        //return orderRepository.findAll(filter.and(byUserId(uid)), pageable); // TODO: Fix Criteria for New User Model
-        return null;
+    public Page<Order> findAll(TokenPrincipal principal, OrderFilter filter, Pageable pageable) {
+        User user = userService.findById(principal.userId());
+        return orderRepository.findAll(filter.and(byUser(user)), pageable);
     }
 
     public Order findById(UUID id) {
@@ -79,9 +79,8 @@ public class OrderService {
                 .orElseThrow(() -> new NotFoundException(String.format("Order with ID %s not found", id)));
     }
 
-    public Order findById(Object principal, UUID id) {
-        UUID uid = getTokenUserId(principal);
-        return orderRepository.findByIdAndUserId(id, uid)
+    public Order findById(TokenPrincipal principal, UUID id) {
+        return orderRepository.findByIdAndUserId(id, principal.userId())
                 .orElseThrow(() -> new NotFoundException(String.format("Order with ID %s not found", id)));
     }
 
@@ -92,18 +91,18 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public Order editReserved(Object principal, UUID id, ReserveOrderDto dto) {
+    public Order editReserved(TokenPrincipal principal, UUID id, ReserveOrderDto dto) {
         Order order = findById(principal, id);
         mutateStateAndSave(order, OrderEventEnum.EDIT_RESERVED);
         mutateOrderDetails(order, dto);
         return orderRepository.save(order);
     }
 
-    public void cancelReserve(Object principal, UUID id) {
+    public void cancelReserve(TokenPrincipal principal, UUID id) {
         mutateStateAndSave(findById(principal, id), OrderEventEnum.CANCEL_RESERVE);
     }
 
-    public void purchase(Object principal, UUID id) {
+    public void purchase(TokenPrincipal principal, UUID id) {
         mutateStateAndSave(findById(principal, id), OrderEventEnum.PURCHASE);
     }
 
@@ -111,7 +110,7 @@ public class OrderService {
         mutateStateAndSave(findById(id), OrderEventEnum.CANCEL_PURCHASE);
     }
 
-    public void cancelPurchase(Object principal, UUID id) {
+    public void cancelPurchase(TokenPrincipal principal, UUID id) {
         mutateStateAndSave(findById(principal, id), OrderEventEnum.CANCEL_PURCHASE);
     }
 
@@ -135,7 +134,7 @@ public class OrderService {
         orderRepository.deleteById(id);
     }
 
-    public void rate(Object principal, UUID oid, UUID pid, RateProductDto dto) {
+    public void rate(TokenPrincipal principal, UUID oid, UUID pid, RateProductDto dto) {
         mutateStateAndSave(findById(principal, oid), OrderEventEnum.LEAVE_FEEDBACK);
         orderProductService.rate(oid, pid, dto.getRate());
     }
@@ -164,14 +163,6 @@ public class OrderService {
             Product p = productService.findById(s.getProductId());
             return new OrderProduct(order, p, p.getPrice(), s.getQuantity(), 0.);
         }).collect(Collectors.toSet());
-    }
-
-    private UUID getTokenUserId(Object principal) {
-        //try {
-        //    return UUID.fromString(accessTokenWrapper.getAccessToken(principal).getSubject());
-        //} catch (Exception e) {
-            throw new BadRequestException("User should be authorized first");
-        //} TODO: Implement
     }
 
     private OrderStateEnum changeState(Order order, OrderEventEnum event) {
@@ -212,7 +203,7 @@ public class OrderService {
         }
     }
 
-//    private Specification<Order> byUserId(UUID id) {
-//        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get(Order_.userId), id);
-//    }
+    private Specification<Order> byUser(User user) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get(Order_.user), user);
+    }
 }
