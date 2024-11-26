@@ -146,7 +146,7 @@ public class OrderService {
     }
 
     private void mutateOrderDetails(Order order, ReserveOrderDto dto) {
-        Set<OrderProduct> products = findProducts(order, dto.getProducts());
+        Set<OrderProduct> products = fillProducts(order, dto.getProducts());
         order.setAddress(dto.getAddress());
         order.getProducts().addAll(products);
         order.setTotal(calculateTotal(products));
@@ -158,7 +158,7 @@ public class OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private Set<OrderProduct> findProducts(Order order, Set<SaveOrderProductDto> set) {
+    private Set<OrderProduct> fillProducts(Order order, Set<SaveOrderProductDto> set) {
         return set.stream().map(s -> {
             Product p = productService.findById(s.getProductId());
             return new OrderProduct(order, p, p.getPrice(), s.getQuantity(), 0.);

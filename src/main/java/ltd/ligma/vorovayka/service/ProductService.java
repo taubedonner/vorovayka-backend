@@ -1,5 +1,6 @@
 package ltd.ligma.vorovayka.service;
 
+import lombok.RequiredArgsConstructor;
 import ltd.ligma.vorovayka.exception.ApiException;
 import ltd.ligma.vorovayka.exception.BadRequestException;
 import ltd.ligma.vorovayka.exception.InternalServerException;
@@ -10,7 +11,6 @@ import ltd.ligma.vorovayka.model.ProductType;
 import ltd.ligma.vorovayka.model.dto.SaveProductDto;
 import ltd.ligma.vorovayka.model.payload.ProductMeta;
 import ltd.ligma.vorovayka.repository.ProductRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -47,6 +48,10 @@ public class ProductService {
                 .orElseThrow(() -> new NotFoundException(String.format("Product with ID %s not found", id)));
         setMeta(product);
         return product;
+    }
+
+    public List<Product> findAllById(Iterable<UUID> ids) {
+        return productRepository.findAllById(ids);
     }
 
     public Product update(UUID id, SaveProductDto productDto) {
