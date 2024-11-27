@@ -81,7 +81,9 @@ public class AuthController {
     @IsUser
     @GetMapping("sessions")
     public List<SessionDto> getSessions(@AuthenticationPrincipal TokenPrincipal tokenPrincipal) {
-        return refreshTokenMapper.toSessionDtoList(authService.getSessions(tokenPrincipal));
+        var sessions = refreshTokenMapper.toSessionDtoList(authService.getSessions(tokenPrincipal));
+        sessions.stream().filter(s -> s.getId() == tokenPrincipal.sessionId()).findFirst().ifPresent(s -> s.setIsActive(true));
+        return sessions;
     }
 
     @IsUser
